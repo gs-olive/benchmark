@@ -39,7 +39,7 @@ class_models = {
     'llama_v2_7b_16h' : (128,512, 'LlamaConfig(num_hidden_layers=16)', 'AutoModelForCausalLM'),
     'hf_MPT_7b_instruct': (512, 512, 'AutoConfig.from_pretrained("mosaicml/mpt-7b-instruct", trust_remote_code=True)', 'AutoModelForCausalLM'),
     'llava' : (512,512, 'AutoConfig.from_pretrained("liuhaotian/llava-v1.5-13b")', 'LlavaForConditionalGeneration'),
-    'llama_v2_7b' : (512,512, 'AutoConfig.from_pretrained("meta-llama/Llama-2-7b-hf")', 'AutoModelForCausalLM'),
+    'llama_v2_7b' : (512,512, 'AutoConfig.from_pretrained("../Llama-2-7b-hf")', 'AutoModelForCausalLM'),
     'llama_v2_13b' : (512,512, 'AutoConfig.from_pretrained("meta-llama/Llama-2-13b-hf")', 'AutoModelForCausalLM'),
     'llama_v2_70b' : (512, 512, 'AutoConfig.from_pretrained("meta-llama/Llama-2-70b-hf")', 'AutoModelForMaskedLM'),
     'codellama' : (512,512, 'AutoConfig.from_pretrained("codellama/CodeLlama-7b-hf")', 'AutoModelForCausalLM'),
@@ -104,10 +104,14 @@ class HuggingFaceModel(BenchmarkModel):
         hugging_face_models_requiring_trust_remote_code = ["hf_Falcon_7b", "hf_MPT_7b_instruct", "phi_1_5", "phi_2", "hf_Yi"]
         if name in hugging_face_models_requiring_trust_remote_code:
             kwargs["trust_remote_code"] = True
-        if hasattr(class_ctor, "from_config"):
+        
+        if name == "llama_v2_7b":
+            self.model = class_ctor.from_pretrained("../Llama-2-7b-hf", torch_dtype=torch.float16).to(device)
+        elif hasattr(class_ctor, "from_config"):
             self.model = class_ctor.from_config(config, **kwargs).to(device)
         else:
             self.model = class_ctor(config, **kwargs).to(device)
+
         self.optimizer = optim.Adam(
             self.model.parameters(),
             lr=0.001,
